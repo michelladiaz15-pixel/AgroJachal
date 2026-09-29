@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroJáchal - Productores</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f1;
+            color: #333;
+        }
+
+        header {
+            background-color: #4d7c0f;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            font-size: 16px;
+        }
+
+        .contenedor {
+            width: 90%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+
+        .boton-agregar {
+            background-color: #65a30d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .boton-agregar:hover {
+            background-color: #4d7c0f;
+        }
+
+        .formulario {
+            display: none;
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .formulario h2 {
+            margin-top: 0;
+            color: #4d7c0f;
+        }
+
+        .campo {
+            margin-bottom: 15px;
+        }
+
+        .campo label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .campo input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .boton-guardar {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .boton-cancelar {
+            background-color: #777;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .tabla-contenedor {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #4d7c0f;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f1f5eb;
+        }
+
+        .boton-editar {
+            background-color: #eab308;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .boton-eliminar {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .mensaje {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🌱 AgroJáchal</h1>
+        <p>Gestión de productores locales</p>
+    </header>
+
+    <div class="contenedor">
+
+        <button class="boton-agregar" onclick="mostrarFormulario()">
+            + Agregar productor
+        </button>
+
+        <div id="formulario" class="formulario">
+
+            <h2 id="tituloFormulario">Nuevo productor</h2>
+
+            <input type="hidden" id="id">
+
+            <div class="campo">
+                <label>Nombre</label>
+                <input type="text" id="nombre" placeholder="Nombre del productor">
+            </div>
+
+            <div class="campo">
+                <label>Emprendimiento</label>
+                <input type="text" id="emprendimiento" placeholder="Nombre del emprendimiento">
+            </div>
+
+            <div class="campo">
+                <label>Producto</label>
+                <input type="text" id="producto" placeholder="Producto que produce">
+            </div>
+
+            <div class="campo">
+                <label>Localidad</label>
+                <input type="text" id="localidad" placeholder="Localidad">
+            </div>
+
+            <div class="campo">
+                <label>Teléfono</label>
+                <input type="text" id="telefono" placeholder="Teléfono">
+            </div>
+
+            <button class="boton-guardar" onclick="guardarProductor()">
+                Guardar
+            </button>
+
+            <button class="boton-cancelar" onclick="cancelarFormulario()">
+                Cancelar
+            </button>
+
+        </div>
+
+        <div id="mensaje" class="mensaje"></div>
+
+        <div class="tabla-contenedor">
+
+            <h2>Productores registrados</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Emprendimiento</th>
+                        <th>Producto</th>
+                        <th>Localidad</th>
+                        <th>Teléfono</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tablaProductores">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const API = "/api/productores";
+
+        // Mostrar productores
+        async function cargarProductores() {
+
+            try {
+
+                const respuesta = await fetch(API);
+                const productores = await respuesta.json();
+                
+                const tabla = document.getElementById("tablaProductores");
+
+                tabla.innerHTML = "";
+
+                productores.forEach(productor => {
+
+                    tabla.innerHTML += `
+                        <tr>
+                            <td>${productor.id}</td>
+                            <td>${productor.nombre}</td>
+                            <td>${productor.emprendimiento}</td>
+                            <td>${productor.producto}</td>
+                            <td>${productor.localidad}</td>
+                            <td>${productor.telefono}</td>
+
+                            <td>
+                                <button class="boton-editar"
+                                    onclick="editarProductor(${productor.id})">
+                                    Editar
+                                </button>
+
+                                <button class="boton-eliminar"
+                                    onclick="eliminarProductor(${productor.id})">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+
+                });
+
+            } catch (error) {
+
+                mostrarMensaje("Error al cargar los productores", true);
+
+            }
+
+        }
+
+
+        // Mostrar formulario
+        function mostrarFormulario() {
+
+            document.getElementById("formulario").style.display = "block";
+
+            document.getElementById("tituloFormulario").textContent =
+                "Nuevo productor";
+
+            document.getElementById("id").value = "";
+
+            document.getElementById("nombre").value = "";
+            document.getElementById("emprendimiento").value = "";
+            document.getElementById("producto").value = "";
+            document.getElementById("localidad").value = "";
+            document.getElementById("telefono").value = "";
+        }
+
+
+        // Cancelar
+        function cancelarFormulario() {
+
+            document.getElementById("formulario").style.display = "none";
+
+        }
+
+
+        // Guardar productor
+        async function guardarProductor() {
+
+            const id = document.getElementById("id").value;
+
+            const productor = {
+
+                nombre: document.getElementById("nombre").value,
+                emprendimiento: document.getElementById("emprendimiento").value,
+                producto: document.getElementById("producto").value,
+                localidad: document.getElementById("localidad").value,
+                telefono: document.getElementById("telefono").value
+
+            };
+
+
+            try {
+
+                let respuesta;
+
+                if (id === "") {
+
+                    respuesta = await fetch(API, {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(productor)
+
+                    });
+
+                } else {
+
+                    respuesta = await fetch(`${API}/${id}`, {
+
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(productor)
+
+                    });
+
+                }
+
+
+                if (!respuesta.ok) {
+
+                    throw new Error("Error al guardar");
+
+                }
+
+
+                document.getElementById("formulario").style.display = "none";
+
+                mostrarMensaje("Productor guardado correctamente");
+
+                cargarProductores();
+
+
+            } catch (error) {
+
+                mostrarMensaje("No se pudo guardar el productor", true);
+
+            }
+
+        }
+
+
+        // Editar productor
+        async function editarProductor(id) {
+
+            try {
+
+                const respuesta = await fetch(`${API}/${id}`);
+
+                const productor = await respuesta.json();
+
+                document.getElementById("formulario").style.display = "block";
+
+                document.getElementById("tituloFormulario").textContent =
+                    "Editar productor";
+
+                document.getElementById("id").value = productor.id;
+
+                document.getElementById("nombre").value =
+                    productor.nombre;
+
+                document.getElementById("emprendimiento").value =
+                    productor.emprendimiento;
+
+                document.getElementById("producto").value =
+                    productor.producto;
+
+                document.getElementById("localidad").value =
+                    productor.localidad;
+
+                document.getElementById("telefono").value =
+                    productor.telefono;
+
+
+            } catch (error) {
+
+                mostrarMensaje("No se pudo cargar el productor", true);
+
+            }
+
+        }
+
+
+        // Eliminar productor
+        async function eliminarProductor(id) {
+
+            const confirmar = confirm(
+                "¿Seguro que querés eliminar este productor?"
+            );
+
+            if (!confirmar) {
+                return;
+            }
+
+
+            try {
+
+                const respuesta = await fetch(`${API}/${id}`, {
+
+                    method: "DELETE"
+
+                });
+
+
+                if (!respuesta.ok) {
+
+                    throw new Error("Error al eliminar");
+
+                }
+
+
+                mostrarMensaje("Productor eliminado correctamente");
+
+                cargarProductores();
+
+
+            } catch (error) {
+
+                mostrarMensaje("No se pudo eliminar el productor", true);
+
+            }
+
+        }
+
+
+        // Mostrar mensajes
+        function mostrarMensaje(texto, error = false) {
+
+            const mensaje = document.getElementById("mensaje");
+
+            mensaje.textContent = texto;
+
+            mensaje.style.color = error ? "red" : "green";
+
+            setTimeout(() => {
+
+                mensaje.textContent = "";
+
+            }, 3000);
+
+        }
+
+
+        // Cargar al iniciar
+        cargarProductores();
+
+    </script>
+
+</body>
+</html>
